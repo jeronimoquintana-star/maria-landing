@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """María Mar IA — Servidor de la landing page (Python)"""
-import json, os, sys, urllib.request, urllib.error
+import json, os, sys, time, datetime, urllib.request, urllib.error
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 
 try:
@@ -77,58 +77,103 @@ Cuando el usuario muestre interés o haga preguntas concretas (sin ser sobre la 
 Ya enviaste un mensaje de bienvenida. No te presentes de nuevo.
 """
 
-HUBSPOT_API_KEY = os.environ.get('HUBSPOT_API_KEY', 'PLACEHOLDER_HUBSPOT_KEY')
+HUBSPOT_API_KEY  = os.environ.get('HUBSPOT_API_KEY', 'PLACEHOLDER_HUBSPOT_KEY')
+MEETING_SLUG     = 'humberto-bravo/humberto-bravo'   # slug del calendario HubSpot Meetings
+MEETING_DURATION = 30 * 60 * 1000                    # 30 minutos en ms
 
+# ── Parseo de horario ──────────────────────────────────────────────────────────
+_DAY_MAP = {
+    'lunes': 0, 'martes': 1,
+    'miércoles': 2, 'miercoles': 2, 'miercóles': 2,
+    'jueves': 3, 'viernes': 4,
+}
+_HOUR_MAP = {
+    '10am': 10, '10:00': 10, '10 am': 10,
+    '12pm': 12, '12:00': 12, '12 pm': 12, 'mediodía': 12,
+    '3pm': 15,  '15:00': 15, '3 pm': 15,
+    '5pm': 17,  '17:00': 17, '5 pm': 17,
+}
+
+def parse_slot_to_ms(slot_str):
+    """Convierte 'jueves 3pm' → Unix timestamp ms (hora México CST = UTC-6)."""
+    MX = datetime.timezone(datetime.timedelta(hours=-6))
+    now = datetime.datetime.now(MX)
+    s   = slot_str.lower()
+
+    day  = next((v for k, v in _DAY_MAP.items()  if k in s), None)
+    hour = next((v for k, v in _HOUR_MAP.items() if k in s), None)
+    if day is None or hour is None:
+        return None
+
+    days_ahead = (day - now.weekday()) % 7 or 7   # mínimo 1 día adelante
+    target = (now + datetime.timedelta(days=days_ahead)).date()
+    dt = datetime.datetime(target.year, target.month, target.day,
+                           hour, 0, 0, tzinfo=MX)
+    return int(dt.timestamp() * 1000)
+
+# ── HubSpot request ────────────────────────────────────────────────────────────
 def hubspot_request(path, payload):
-    """Hace un POST a la API de HubSpot y devuelve el JSON de respuesta.
-    Soporta tanto Legacy API Key (hapikey) como Private App Token (pat-...)."""
+    """POST a la API de HubSpot. Soporta Legacy API Key y Private App Token."""
     if HUBSPOT_API_KEY.startswith('pat-'):
-        url = f'https://api.hubapi.com{path}'
-        headers = {'Content-Type': 'application/json', 'Authorization': f'Bearer {HUBSPOT_API_KEY}'}
+        url     = f'https://api.hubapi.com{path}'
+        headers = {'Content-Type': 'application/json',
+                   'Authorization': f'Bearer {HUBSPOT_API_KEY}'}
     else:
-        # Legacy API Key — va como query param
-        sep = '&' if '?' in path else '?'
-        url = f'https://api.hubapi.com{path}{sep}hapikey={HUBSPOT_API_KEY}'
+        sep     = '&' if '?' in path else '?'
+        url     = f'https://api.hubapi.com{path}{sep}hapikey={HUBSPOT_API_KEY}'
         headers = {'Content-Type': 'application/json'}
-    data = json.dumps(payload).encode('utf-8')
-    req = urllib.request.Request(url, data=data, headers=headers)
-    with urllib.request.urlopen(req) as resp:
-        return json.loads(resp.read())
+    req = urllib.request.Request(url, json.dumps(payload).encode(), headers)
+    try:
+        with urllib.request.urlopen(req) as resp:
+            return json.loads(resp.read())
+    except urllib.error.HTTPError as e:
+        body = e.read().decode('utf-8', errors='replace')
+        raise RuntimeError(f'HubSpot {e.code}: {body}') from None
 
+# ── Agendar demo ───────────────────────────────────────────────────────────────
 def book_demo(name, email, company, team_size, slot):
-    """Crea contacto + reunión en HubSpot y los asocia."""
-    # 1. Crear contacto
+    """
+    1. Crea el contacto en el CRM de HubSpot.
+    2. Agenda la reunión directamente en el calendario via HubSpot Meetings API.
+       HubSpot envía automáticamente el email de confirmación al prospecto.
+    """
     first, *rest = name.strip().split(' ', 1)
     last = rest[0] if rest else ''
-    contact = hubspot_request('/crm/v3/objects/contacts', {
-        'properties': {
-            'firstname': first,
-            'lastname': last,
-            'email': email,
-            'company': company,
-            'message': f'Personas en campo: {team_size}. Horario: {slot}',
-            'hs_lead_status': 'NEW',
-        }
-    })
-    contact_id = contact['id']
 
-    # 2. Crear reunión
-    import time
-    meeting = hubspot_request('/crm/v3/objects/meetings', {
-        'properties': {
-            'hs_timestamp': int(time.time() * 1000),
-            'hs_meeting_title': f'Demo Michamba — {name}',
-            'hs_meeting_body': f'Empresa: {company}\nPersonas en campo: {team_size}\nHorario solicitado: {slot}',
-            'hs_meeting_outcome': 'SCHEDULED',
-        }
-    })
-    meeting_id = meeting['id']
+    start_ms = parse_slot_to_ms(slot)
+    if not start_ms:
+        raise ValueError(f'No pude interpretar el horario: "{slot}"')
 
-    # 3. Asociar contacto con reunión
-    hubspot_request('/crm/v3/associations/contacts/meetings/batch/create', {
-        'inputs': [{'from': {'id': contact_id}, 'to': {'id': meeting_id}, 'type': 'contact_to_meeting'}]
+    # 1. Crear / actualizar contacto en CRM
+    try:
+        contact = hubspot_request('/crm/v3/objects/contacts', {
+            'properties': {
+                'firstname': first, 'lastname': last, 'email': email,
+                'company': company,
+                'message': f'Personas en campo: {team_size}. Demo solicitada: {slot}',
+                'hs_lead_status': 'NEW',
+            }
+        })
+        contact_id = contact['id']
+    except Exception:
+        contact_id = None   # no bloquear el agendado si el contacto falla
+
+    # 2. Reservar en el calendario de HubSpot Meetings (envía email de confirmación)
+    booking = hubspot_request('/scheduler/v3/meetings/meeting-links/book', {
+        'slug':      MEETING_SLUG,
+        'email':     email,
+        'firstName': first,
+        'lastName':  last,
+        'startTime': start_ms,
+        'duration':  MEETING_DURATION,
+        'timezone':  'America/Mexico_City',
+        'formFields': [
+            {'name': 'company', 'value': company},
+            {'name': 'message', 'value': f'Personas en campo: {team_size}'},
+        ],
     })
-    return contact_id, meeting_id
+
+    return contact_id, booking
 
 # Cambiar al directorio del script para servir archivos estáticos
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
