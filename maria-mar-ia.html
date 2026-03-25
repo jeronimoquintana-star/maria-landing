@@ -1017,6 +1017,14 @@ async function sendMsg() {
   btn.disabled = true;
   const typing = showTyping();
 
+  // Si tarda más de 3 s sin respuesta, mostrar mensaje de espera
+  const slowTimer = setTimeout(() => {
+    if (!typingRemoved) {
+      const tw = typing.querySelector('.typing-wrap');
+      if (tw) tw.innerHTML = '<span style="font-size:13px;opacity:0.85">Un momento, estoy procesando tu solicitud…</span>';
+    }
+  }, 3000);
+
   let fullText = '';
 
   try {
@@ -1053,6 +1061,7 @@ async function sendMsg() {
           if (p.error)  fullText  = `⚠️ ${p.error}`;
           if (p.text)   fullText += p.text;
           if (!typingRemoved) {
+            clearTimeout(slowTimer);
             typing.remove();
             msgs.appendChild(aiEl);
             typingRemoved = true;
@@ -1103,7 +1112,7 @@ async function sendMsg() {
     if (fullText) history.push({ role: 'assistant', content: fullText });
 
   } catch (err) {
-    try { typing.remove(); } catch(_) {}
+    try { clearTimeout(slowTimer); typing.remove(); } catch(_) {}
     addAI('Lo siento, hubo un error al conectar. ¿Puedes intentarlo de nuevo?');
   } finally {
     if (userMsgCount >= MAX_MSGS) {
