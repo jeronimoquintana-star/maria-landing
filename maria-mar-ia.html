@@ -18,7 +18,7 @@
       --teal10:       rgba(44,202,181,0.10);
       --teal20:       rgba(44,202,181,0.20);
       --teal-glow:    rgba(44,202,181,0.07);
-      --coral:        #E85A45;
+      --coral:        #064640;
       --w100:         #FFFFFF;
       --w80:          rgba(255,255,255,0.82);
       --w60:          rgba(255,255,255,0.60);
@@ -289,6 +289,8 @@
       white-space: nowrap;
     }
     .chip:hover { background: var(--teal10); border-color: var(--teal20); color: var(--teal); }
+    .chip-demo { border-color: var(--teal20); color: var(--teal); font-weight: 600; }
+    .chip-demo:hover { background: var(--teal); color: #fff; border-color: var(--teal); }
 
     /* Input */
     .chat-inp-wrap {
@@ -494,6 +496,70 @@
     .form-submit.sent { background: var(--teal); cursor: default; transform: none; }
     .form-disc { font-size: 11px; color: var(--w40); margin-top: 4px; }
 
+    /* ══ CALCULADORA ROI ═══════════════════════════════════════════════════ */
+    .calc-section {
+      background: #071a14;
+      padding: 80px 24px;
+      position: relative; z-index: 1;
+    }
+    .calc-inner { max-width: 960px; margin: 0 auto; }
+    .calc-header { text-align: center; margin-bottom: 52px; }
+    .calc-badge {
+      display: inline-block;
+      background: rgba(44,202,181,0.12); color: var(--teal);
+      font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+      padding: 5px 14px; border-radius: var(--pill); margin-bottom: 18px;
+    }
+    .calc-title {
+      font-size: clamp(22px, 3.5vw, 34px); font-weight: 700; color: var(--w100);
+      line-height: 1.25; margin-bottom: 12px;
+    }
+    .calc-sub { color: var(--w60); font-size: 15px; }
+
+    .calc-body { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: start; }
+    @media(max-width: 700px) { .calc-body { grid-template-columns: 1fr; gap: 32px; } }
+
+    /* Sliders */
+    .calc-sliders { display: flex; flex-direction: column; gap: 24px; }
+    .slider-group { display: flex; flex-direction: column; gap: 8px; }
+    .slider-label { display: flex; justify-content: space-between; align-items: center; }
+    .slider-label span { font-size: 13px; color: var(--w60); }
+    .slider-label strong { font-size: 14px; color: var(--teal); font-weight: 600; min-width: 52px; text-align: right; }
+    .calc-slider {
+      -webkit-appearance: none; width: 100%; height: 4px;
+      background: rgba(44,202,181,0.15); border-radius: 2px; outline: none;
+    }
+    .calc-slider::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 18px; height: 18px;
+      border-radius: 50%; background: var(--teal); cursor: pointer;
+      box-shadow: 0 0 0 3px rgba(44,202,181,0.2);
+    }
+
+    /* Resultados */
+    .calc-results { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .calc-result-card {
+      background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+      border-radius: 14px; padding: 20px 16px;
+      display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center;
+      transition: border-color .2s;
+    }
+    .calc-result-highlight {
+      border-color: rgba(44,202,181,0.3);
+      background: rgba(44,202,181,0.06);
+    }
+    .calc-result-icon { font-size: 22px; }
+    .calc-result-val {
+      font-size: 26px; font-weight: 700; color: var(--w100);
+      font-family: 'Poppins', sans-serif;
+    }
+    .calc-result-highlight .calc-result-val { color: var(--teal); }
+    .calc-result-label { font-size: 11px; color: var(--w40); line-height: 1.4; }
+
+    /* CTA calculadora */
+    .calc-cta-wrap { text-align: center; margin-top: 48px; }
+    .calc-cta-btn { display: inline-flex; }
+    .calc-disclaimer { font-size: 11px; color: var(--w30); margin-top: 12px; }
+
     /* ══ FOOTER ═══════════════════════════════════════════════════════════ */
     footer {
       position: relative; z-index: 1;
@@ -614,6 +680,7 @@
       <div class="chat-chips" id="chatChips">
         <button class="chip" onclick="useChip(this)">¿Qué hace María?</button>
         <button class="chip" onclick="useChip(this)">¿Funciona con WhatsApp?</button>
+        <button class="chip chip-demo" onclick="useChip(this)">Quiero una demo</button>
         <button class="chip" onclick="useChip(this)">Tengo 20 personas en campo</button>
       </div>
 
@@ -627,6 +694,82 @@
     </div>
   </div>
 
+</section>
+
+<!-- ════════════════ CALCULADORA ROI ════════════════ -->
+<section id="calculadora" class="calc-section">
+  <div class="calc-inner">
+    <div class="calc-header">
+      <span class="calc-badge">Calculadora de impacto</span>
+      <h2 class="calc-title">¿Cuánto le cuesta a tu empresa<br>no tener visibilidad en campo?</h2>
+      <p class="calc-sub">Ajusta los controles según tu operación — los números son reales.</p>
+    </div>
+
+    <div class="calc-body">
+      <!-- Sliders -->
+      <div class="calc-sliders">
+        <div class="slider-group">
+          <div class="slider-label">
+            <span>Personas en campo</span>
+            <strong id="val-personas">20</strong>
+          </div>
+          <input type="range" class="calc-slider" id="s-personas" min="5" max="200" value="20" oninput="calcUpdate()">
+        </div>
+        <div class="slider-group">
+          <div class="slider-label">
+            <span>Minutos por registro manual</span>
+            <strong id="val-minutos">15 min</strong>
+          </div>
+          <input type="range" class="calc-slider" id="s-minutos" min="5" max="60" value="15" oninput="calcUpdate()">
+        </div>
+        <div class="slider-group">
+          <div class="slider-label">
+            <span>Tareas por día por persona</span>
+            <strong id="val-tareas">8</strong>
+          </div>
+          <input type="range" class="calc-slider" id="s-tareas" min="2" max="30" value="8" oninput="calcUpdate()">
+        </div>
+        <div class="slider-group">
+          <div class="slider-label">
+            <span>Costo por hora (MXN)</span>
+            <strong id="val-costo">$150</strong>
+          </div>
+          <input type="range" class="calc-slider" id="s-costo" min="50" max="500" value="150" oninput="calcUpdate()">
+        </div>
+      </div>
+
+      <!-- Resultados -->
+      <div class="calc-results">
+        <div class="calc-result-card">
+          <span class="calc-result-icon">⏱</span>
+          <span class="calc-result-val" id="r-horas">88</span>
+          <span class="calc-result-label">horas perdidas<br>al mes</span>
+        </div>
+        <div class="calc-result-card calc-result-highlight">
+          <span class="calc-result-icon">💸</span>
+          <span class="calc-result-val" id="r-costo">$13,200</span>
+          <span class="calc-result-label">costo mensual<br>en tiempo perdido</span>
+        </div>
+        <div class="calc-result-card">
+          <span class="calc-result-icon">🔍</span>
+          <span class="calc-result-val" id="r-tareas">985</span>
+          <span class="calc-result-label">tareas sin<br>visibilidad real</span>
+        </div>
+        <div class="calc-result-card">
+          <span class="calc-result-icon">👤</span>
+          <span class="calc-result-val" id="r-salarios">1.7</span>
+          <span class="calc-result-label">empleados equivalentes<br>que no producen</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="calc-cta-wrap">
+      <a href="https://wa.me/522878832524?text=Hola%2C%20quiero%20recuperar%20el%20tiempo%20perdido%20en%20mi%20operaci%C3%B3n.%20Quiero%20una%20demo%20de%20Mar%C3%ADa." target="_blank" class="btn-primary calc-cta-btn">
+        Quiero recuperar este tiempo
+      </a>
+      <p class="calc-disclaimer">Cálculo basado en 22 días laborales/mes · Promedio industria México</p>
+    </div>
+  </div>
 </section>
 
 <!-- ════════════════ LOGOS ════════════════ -->
@@ -921,6 +1064,42 @@ async function sendMsg() {
     }
     if (!typingRemoved) { typing.remove(); msgs.appendChild(aiEl); }
 
+    // Detectar tags especiales al final del stream
+    const demoMatch = fullText.match(/\[\[DEMO:(\{.*?\})\]\]/s);
+    if (demoMatch) {
+      try {
+        const demoData = JSON.parse(demoMatch[1]);
+        fullText = fullText.replace(/\[\[DEMO:\{.*?\}\]\]/s, '').trim();
+        bbl.innerHTML = md(fullText);
+        // Llamar al backend para crear la demo en HubSpot
+        fetch('/api/book-demo', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(demoData),
+        })
+        .then(r => r.json())
+        .then(res => {
+          if (res.ok) {
+            addAI(`✅ ¡Tu demo está agendada para **${demoData.slot}**! Te llegará la confirmación a **${demoData.email}**. ¡Nos vemos pronto! 🎉`);
+          } else {
+            addAI('Hubo un problema al agendar. Por favor, dale clic al botón "Hablar con el equipo" para coordinar directamente.');
+          }
+        })
+        .catch(() => {
+          addAI('Hubo un problema al agendar. Por favor, dale clic al botón "Hablar con el equipo" para coordinar directamente.');
+        });
+      } catch(_) {}
+    }
+
+    if (fullText.includes('[[CALCULADORA]]')) {
+      fullText = fullText.replace('[[CALCULADORA]]', '').trim();
+      bbl.innerHTML = md(fullText);
+      setTimeout(() => {
+        const calc = document.getElementById('calculadora');
+        if (calc) calc.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 400);
+    }
+
     if (fullText) history.push({ role: 'assistant', content: fullText });
 
   } catch (err) {
@@ -936,6 +1115,34 @@ async function sendMsg() {
     }
   }
 }
+
+/* ══════════════════════════════════════════════════
+   CALCULADORA ROI
+══════════════════════════════════════════════════ */
+function calcUpdate() {
+  const personas = +document.getElementById('s-personas').value;
+  const minutos  = +document.getElementById('s-minutos').value;
+  const tareas   = +document.getElementById('s-tareas').value;
+  const costo    = +document.getElementById('s-costo').value;
+
+  document.getElementById('val-personas').textContent = personas;
+  document.getElementById('val-minutos').textContent  = minutos + ' min';
+  document.getElementById('val-tareas').textContent   = tareas;
+  document.getElementById('val-costo').textContent    = '$' + costo;
+
+  const dias = 22;
+  const horasMes  = (personas * minutos * tareas * dias) / 60;
+  const costoMes  = horasMes * costo;
+  const tareasMes = personas * tareas * dias;
+  const sinVis    = Math.round(tareasMes * 0.28);
+  const salarios  = (costoMes / 8000).toFixed(1);
+
+  document.getElementById('r-horas').textContent   = Math.round(horasMes).toLocaleString('es-MX');
+  document.getElementById('r-costo').textContent   = '$' + Math.round(costoMes).toLocaleString('es-MX');
+  document.getElementById('r-tareas').textContent  = sinVis.toLocaleString('es-MX');
+  document.getElementById('r-salarios').textContent = salarios;
+}
+calcUpdate(); // Inicializar con valores default
 
 /* ══════════════════════════════════════════════════
    SCROLL ANIMATIONS

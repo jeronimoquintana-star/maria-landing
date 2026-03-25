@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """María Mar IA — Servidor de la landing page (Python)"""
-import json, os, sys
+import json, os, sys, urllib.request, urllib.error
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 
 try:
@@ -43,8 +43,26 @@ Eres María, la inteligencia artificial de Michamba para operaciones de campo en
 - **Mantenimiento y facilities**: asignación de órdenes de trabajo, evidencia fotográfica, cierre de tickets
 - **Limpieza y servicios**: control de rondas, checklist por turno, reporte de incidencias
 
+## Flujo de agendado de demo — IMPORTANTE
+Cuando el usuario diga que quiere una demo o agendar una reunión, pide los siguientes datos UNO POR UNO en este orden exacto (espera la respuesta de cada uno antes de pedir el siguiente):
+1. Nombre completo
+2. Correo electrónico
+3. Empresa y cuántas personas tienen en campo
+4. Horario preferido — ofrece estas opciones: Lunes a Viernes en los horarios 10:00am, 12:00pm, 3:00pm o 5:00pm (hora de México)
+
+Cuando tengas los 4 datos completos, confirma amablemente el agendado y AL FINAL de tu respuesta agrega EXACTAMENTE este bloque (sin espacios extra, en una sola línea):
+[[DEMO:{"name":"NOMBRE","email":"EMAIL","company":"EMPRESA","team_size":"PERSONAS","slot":"HORARIO_ELEGIDO"}]]
+
+Reemplaza los valores con los datos reales que el usuario proporcionó. Este bloque es invisible para el usuario.
+
+## Calculadora de impacto operativo
+Cuando el usuario pregunte sobre cuánto le cuesta la ineficiencia, cuánto tiempo pierde, el ROI, el impacto económico o la productividad de su equipo, responde brevemente y agrega AL FINAL de tu respuesta (en una línea separada):
+[[CALCULADORA]]
+
+Este bloque activa una calculadora visual en la página. Es invisible para el usuario.
+
 ## Cierre de conversación
-Cuando el usuario muestre interés o haga preguntas concretas, invítalo a conectar con el equipo usando el botón de la página. Di algo como: "¿Quieres ver cómo funcionaría para tu operación? Dale clic al botón 'Hablar con el equipo y saber más' que está aquí en la página — ellos te muestran todo con una demo." NUNCA menciones números de teléfono ni WhatsApp.
+Cuando el usuario muestre interés o haga preguntas concretas (sin ser sobre la demo ni costos), invítalo a conectar con el equipo usando el botón de la página. Di algo como: "¿Quieres ver cómo funcionaría para tu operación? Dale clic al botón 'Hablar con el equipo y saber más' que está aquí en la página." NUNCA menciones números de teléfono ni WhatsApp.
 
 ## Tu personalidad
 - Directa, eficiente, cálida — español mexicano natural
@@ -52,12 +70,60 @@ Cuando el usuario muestre interés o haga preguntas concretas, invítalo a conec
 - Emojis con moderación
 
 ## Formato
-- Máximo 2 párrafos cortos, 3 oraciones cada uno
+- Máximo 2 párrafos cortos, 3 oraciones cada uno (excepto cuando estés recolectando datos para la demo — en ese caso haz una sola pregunta a la vez)
 - Ve directo al punto
 
 ## Nota
 Ya enviaste un mensaje de bienvenida. No te presentes de nuevo.
 """
+
+HUBSPOT_API_KEY = os.environ.get('HUBSPOT_API_KEY', 'PLACEHOLDER_HUBSPOT_KEY')
+
+def hubspot_request(path, payload):
+    """Hace un POST a la API de HubSpot y devuelve el JSON de respuesta."""
+    url = f'https://api.hubapi.com{path}'
+    data = json.dumps(payload).encode('utf-8')
+    req = urllib.request.Request(url, data=data, headers={
+        'Content-Type': 'application/json',
+        'Authorization': f'Bearer {HUBSPOT_API_KEY}',
+    })
+    with urllib.request.urlopen(req) as resp:
+        return json.loads(resp.read())
+
+def book_demo(name, email, company, team_size, slot):
+    """Crea contacto + reunión en HubSpot y los asocia."""
+    # 1. Crear contacto
+    first, *rest = name.strip().split(' ', 1)
+    last = rest[0] if rest else ''
+    contact = hubspot_request('/crm/v3/objects/contacts', {
+        'properties': {
+            'firstname': first,
+            'lastname': last,
+            'email': email,
+            'company': company,
+            'message': f'Personas en campo: {team_size}. Horario: {slot}',
+            'hs_lead_status': 'NEW',
+        }
+    })
+    contact_id = contact['id']
+
+    # 2. Crear reunión
+    import time
+    meeting = hubspot_request('/crm/v3/objects/meetings', {
+        'properties': {
+            'hs_timestamp': int(time.time() * 1000),
+            'hs_meeting_title': f'Demo Michamba — {name}',
+            'hs_meeting_body': f'Empresa: {company}\nPersonas en campo: {team_size}\nHorario solicitado: {slot}',
+            'hs_meeting_outcome': 'SCHEDULED',
+        }
+    })
+    meeting_id = meeting['id']
+
+    # 3. Asociar contacto con reunión
+    hubspot_request('/crm/v3/associations/contacts/meetings/batch/create', {
+        'inputs': [{'from': {'id': contact_id}, 'to': {'id': meeting_id}, 'type': 'contact_to_meeting'}]
+    })
+    return contact_id, meeting_id
 
 # Cambiar al directorio del script para servir archivos estáticos
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
@@ -75,8 +141,30 @@ class Handler(SimpleHTTPRequestHandler):
     def do_POST(self):
         if self.path == '/api/chat':
             self._chat()
+        elif self.path == '/api/book-demo':
+            self._book_demo()
         else:
             self.send_error(404)
+
+    def _book_demo(self):
+        length = int(self.headers.get('Content-Length', 0))
+        body = json.loads(self.rfile.read(length))
+        name      = body.get('name', '')
+        email     = body.get('email', '')
+        company   = body.get('company', '')
+        team_size = body.get('team_size', '')
+        slot      = body.get('slot', '')
+
+        self.send_response(200)
+        self.send_header('Content-Type', 'application/json')
+        self.end_headers()
+
+        try:
+            contact_id, meeting_id = book_demo(name, email, company, team_size, slot)
+            payload = json.dumps({'ok': True, 'contact_id': contact_id, 'meeting_id': meeting_id})
+        except Exception as e:
+            payload = json.dumps({'ok': False, 'error': str(e)})
+        self.wfile.write(payload.encode())
 
     def _chat(self):
         length = int(self.headers.get('Content-Length', 0))
