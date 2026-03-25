@@ -80,13 +80,18 @@ Ya enviaste un mensaje de bienvenida. No te presentes de nuevo.
 HUBSPOT_API_KEY = os.environ.get('HUBSPOT_API_KEY', 'PLACEHOLDER_HUBSPOT_KEY')
 
 def hubspot_request(path, payload):
-    """Hace un POST a la API de HubSpot y devuelve el JSON de respuesta."""
-    url = f'https://api.hubapi.com{path}'
+    """Hace un POST a la API de HubSpot y devuelve el JSON de respuesta.
+    Soporta tanto Legacy API Key (hapikey) como Private App Token (pat-...)."""
+    if HUBSPOT_API_KEY.startswith('pat-'):
+        url = f'https://api.hubapi.com{path}'
+        headers = {'Content-Type': 'application/json', 'Authorization': f'Bearer {HUBSPOT_API_KEY}'}
+    else:
+        # Legacy API Key — va como query param
+        sep = '&' if '?' in path else '?'
+        url = f'https://api.hubapi.com{path}{sep}hapikey={HUBSPOT_API_KEY}'
+        headers = {'Content-Type': 'application/json'}
     data = json.dumps(payload).encode('utf-8')
-    req = urllib.request.Request(url, data=data, headers={
-        'Content-Type': 'application/json',
-        'Authorization': f'Bearer {HUBSPOT_API_KEY}',
-    })
+    req = urllib.request.Request(url, data=data, headers=headers)
     with urllib.request.urlopen(req) as resp:
         return json.loads(resp.read())
 
