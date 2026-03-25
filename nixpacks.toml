@@ -1,5 +1,0 @@
-[phases.install]
-cmds = ["pip install --break-system-packages -r requirements.txt"]
-
-[start]
-cmd = "python server.py"
