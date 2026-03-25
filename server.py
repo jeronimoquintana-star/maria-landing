@@ -58,6 +58,14 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 class Handler(SimpleHTTPRequestHandler):
 
+    def do_GET(self):
+        if self.path == '/' or self.path == '':
+            self.send_response(302)
+            self.send_header('Location', '/maria-mar-ia.html')
+            self.end_headers()
+        else:
+            super().do_GET()
+
     def do_POST(self):
         if self.path == '/api/chat':
             self._chat()
