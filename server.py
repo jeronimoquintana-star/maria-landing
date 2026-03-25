@@ -107,4 +107,4 @@ if __name__ == '__main__':
         print('    ANTHROPIC_API_KEY=sk-ant-... python3 server.py\n')
     else:
         print('    API key: detectada ✓\n')
-    HTTPServer(('', PORT), Handler).serve_forever()
+    HTTPServer(('0.0.0.0', PORT), Handler).serve_forever()
