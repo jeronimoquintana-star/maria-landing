@@ -844,6 +844,22 @@ inp.addEventListener('keydown', e => {
   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); }
 });
 
+const MAX_MSGS = 15;
+let userMsgCount = 0;
+
+function showLimitMsg() {
+  inp.disabled = true;
+  btn.disabled = true;
+  inp.placeholder = 'Límite de preguntas alcanzado';
+  const aiEl = document.createElement('div');
+  aiEl.className = 'msg msg-ai';
+  aiEl.innerHTML = `<div class="msg-av">M</div><div class="msg-bbl"></div>`;
+  msgs.appendChild(aiEl);
+  const bbl = aiEl.querySelector('.msg-bbl');
+  bbl.innerHTML = `¡Espero haberte dado una buena idea de lo que puedo hacer por tu operación! 🚀<br><br>Si quieres ver cómo funciona Michamba para tu empresa en específico, el equipo puede mostrarte una demo personalizada:<br><br><a href="https://wa.me/522878832524?text=Hola%2C%20quiero%20agendar%20una%20demo%20de%20Michamba." target="_blank" style="display:inline-flex;align-items:center;gap:8px;background:#25D366;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none;font-weight:600;font-size:13px;margin-top:4px;">💬 Agendar demo con Michamba</a>`;
+  scrollBot();
+}
+
 async function sendMsg() {
   const text = inp.value.trim();
   if (!text || inp.disabled) return;
@@ -852,6 +868,7 @@ async function sendMsg() {
   chips.style.display = 'none';
   addUser(text);
   history.push({ role: 'user', content: text });
+  userMsgCount++;
 
   inp.disabled = true;
   btn.disabled = true;
@@ -877,18 +894,19 @@ async function sendMsg() {
     const reader = resp.body.getReader();
     const dec    = new TextDecoder();
     let   buf    = '';
+    let   done   = false;
 
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buf += dec.decode(value, { stream: true });
+    while (!done) {
+      const { done: d, value } = await reader.read();
+      done = d;
+      if (value) buf += dec.decode(value, { stream: true });
       const lines = buf.split('\n');
       buf = lines.pop() ?? '';
 
       for (const line of lines) {
         if (!line.startsWith('data: ')) continue;
         const raw = line.slice(6).trim();
-        if (raw === '[DONE]') break;
+        if (raw === '[DONE]') { done = true; break; }
         try {
           const p = JSON.parse(raw);
           if (p.error)  fullText  = `⚠️ ${p.error}`;
@@ -902,12 +920,16 @@ async function sendMsg() {
     if (fullText) history.push({ role: 'assistant', content: fullText });
 
   } catch (err) {
-    if (document.getElementById('typing')) typing.remove();
+    try { typing.remove(); } catch(_) {}
     addAI('Lo siento, hubo un error al conectar. ¿Puedes intentarlo de nuevo?');
   } finally {
-    inp.disabled = false;
-    btn.disabled = false;
-    inp.focus();
+    if (userMsgCount >= MAX_MSGS) {
+      showLimitMsg();
+    } else {
+      inp.disabled = false;
+      btn.disabled = false;
+      inp.focus();
+    }
   }
 }
 
