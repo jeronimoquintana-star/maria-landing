@@ -883,18 +883,16 @@ async function sendMsg() {
       body: JSON.stringify({ messages: history }),
     });
 
-    typing.remove();
-
     const aiEl = document.createElement('div');
     aiEl.className = 'msg msg-ai';
     aiEl.innerHTML = `<div class="msg-av">M</div><div class="msg-bbl"></div>`;
-    msgs.appendChild(aiEl);
     const bbl = aiEl.querySelector('.msg-bbl');
 
     const reader = resp.body.getReader();
     const dec    = new TextDecoder();
     let   buf    = '';
     let   done   = false;
+    let   typingRemoved = false;
 
     while (!done) {
       const { done: d, value } = await reader.read();
@@ -911,11 +909,17 @@ async function sendMsg() {
           const p = JSON.parse(raw);
           if (p.error)  fullText  = `⚠️ ${p.error}`;
           if (p.text)   fullText += p.text;
+          if (!typingRemoved) {
+            typing.remove();
+            msgs.appendChild(aiEl);
+            typingRemoved = true;
+          }
           bbl.innerHTML = md(fullText);
           scrollBot();
         } catch (_) {}
       }
     }
+    if (!typingRemoved) { typing.remove(); msgs.appendChild(aiEl); }
 
     if (fullText) history.push({ role: 'assistant', content: fullText });
 
