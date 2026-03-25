@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="María — La primera IA diseñada para operaciones de campo en México. Parte del ecosistema Michamba." />
+  <title>María — La IA del ecosistema Michamba</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:           #0E2419;
+      --bg2:          #091810;
+      --glass:        rgba(8, 24, 16, 0.78);
+      --glass2:       rgba(14, 36, 25, 0.6);
+      --teal:         #2CCAB5;
+      --teal10:       rgba(44,202,181,0.10);
+      --teal20:       rgba(44,202,181,0.20);
+      --teal-glow:    rgba(44,202,181,0.07);
+      --coral:        #E85A45;
+      --w100:         #FFFFFF;
+      --w80:          rgba(255,255,255,0.82);
+      --w60:          rgba(255,255,255,0.60);
+      --w40:          rgba(255,255,255,0.40);
+      --w20:          rgba(255,255,255,0.20);
+      --w10:          rgba(255,255,255,0.08);
+      --w05:          rgba(255,255,255,0.04);
+      --border:       rgba(255,255,255,0.09);
+      --border-teal:  rgba(44,202,181,0.28);
+      --r8: 8px; --r12: 12px; --r16: 16px; --r20: 20px; --r24: 24px;
+      --pill: 100px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: var(--bg);
+      color: var(--w100);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* Ambient glow background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 70% 60% at 85% 10%, rgba(44,202,181,0.09) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 50% at 10% 90%, rgba(44,202,181,0.06) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ══ NAV ══════════════════════════════════════════════════════════════ */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 52px;
+      background: rgba(8, 22, 14, 0.88);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-logo {
+      display: flex; align-items: center; gap: 10px;
+      text-decoration: none;
+    }
+    .nav-logo img {
+      height: 36px;
+      width: auto;
+      display: block;
+    }
+    .nav-logo-x {
+      font-size: 13px; font-weight: 500;
+      color: rgba(255,255,255,0.35);
+      letter-spacing: 0;
+    }
+    .nav-logo-maria {
+      font-size: 15px; font-weight: 700;
+      color: var(--teal);
+      letter-spacing: -0.3px;
+    }
+    .nav-right { display: flex; align-items: center; gap: 14px; }
+    .nav-link {
+      color: var(--w60); font-size: 13px; font-weight: 500;
+      text-decoration: none; transition: color 0.2s;
+    }
+    .nav-link:hover { color: var(--w100); }
+    .nav-cta {
+      display: inline-block;
+      background: var(--coral); color: var(--w100);
+      font-family: 'Poppins', sans-serif; font-size: 14px; font-weight: 600;
+      padding: 11px 24px; border-radius: var(--r8);
+      text-decoration: none; border: none; cursor: pointer;
+      transition: opacity 0.2s, transform 0.15s;
+    }
+    .nav-cta:hover { opacity: 0.88; transform: translateY(-1px); }
+
+    /* ══ HERO ══════════════════════════════════════════════════════════════ */
+    #hero {
+      position: relative; z-index: 1;
+      min-height: calc(100vh - 60px);
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 52px; max-width: 1120px; margin: 0 auto;
+      padding: 70px 52px 90px; align-items: center;
+    }
+
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--teal10); border: 1px solid var(--teal20);
+      border-radius: var(--pill); padding: 5px 14px;
+      margin-bottom: 22px; font-size: 12px; font-weight: 500; color: var(--teal);
+    }
+    .badge-dot {
+      width: 6px; height: 6px; background: var(--teal);
+      border-radius: 50%; flex-shrink: 0;
+      animation: pulse-dot 2.2s infinite;
+    }
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.35; }
+    }
+
+    .hero-h1 {
+      font-size: 50px; font-weight: 800; line-height: 1.12;
+      letter-spacing: -1.5px; margin-bottom: 20px;
+    }
+    .hero-h1 .hl { color: var(--teal); }
+
+    .hero-sub {
+      font-size: 15px; color: var(--w60); line-height: 1.75;
+      margin-bottom: 36px; max-width: 430px;
+    }
+
+    .hero-actions {
+      display: flex; flex-direction: column;
+      gap: 11px; max-width: 300px; margin-bottom: 34px;
+    }
+    .btn-primary {
+      display: flex; align-items: center; justify-content: center; gap: 9px;
+      background: var(--coral); color: var(--w100);
+      font-family: 'Poppins', sans-serif; font-size: 15px; font-weight: 600;
+      padding: 17px 28px; border-radius: var(--r8);
+      border: none; cursor: pointer; text-decoration: none;
+      transition: opacity 0.2s, transform 0.15s;
+    }
+    .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn-secondary {
+      display: flex; align-items: center; justify-content: center; gap: 7px;
+      background: transparent; color: var(--w80);
+      font-family: 'Poppins', sans-serif; font-size: 15px; font-weight: 500;
+      padding: 16px 28px; border-radius: var(--r8);
+      border: 1px solid var(--border); cursor: pointer; text-decoration: none;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .btn-secondary:hover { border-color: var(--teal20); color: var(--teal); }
+
+    .hero-metrics { display: flex; gap: 8px; flex-wrap: wrap; }
+    .metric-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--w10); border-radius: var(--pill);
+      padding: 6px 14px; font-size: 12px; font-weight: 500; color: var(--w60);
+    }
+
+    /* ══ CHAT CARD ════════════════════════════════════════════════════════ */
+    .hero-right {
+      display: flex; align-items: center; justify-content: center;
+    }
+    .chat-card {
+      width: 100%; max-width: 430px; height: 500px;
+      background: var(--glass);
+      backdrop-filter: blur(28px); -webkit-backdrop-filter: blur(28px);
+      border: 1px solid var(--border-teal);
+      border-radius: var(--r24);
+      box-shadow: 0 28px 70px rgba(0,0,0,0.5), 0 0 0 1px rgba(44,202,181,0.08), 0 0 60px var(--teal-glow);
+      overflow: hidden;
+      display: flex; flex-direction: column;
+    }
+
+    /* Chat header */
+    .chat-hd {
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 18px;
+      background: rgba(5, 16, 10, 0.85);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .chat-av {
+      width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0;
+      background: linear-gradient(135deg, #2CCAB5, #18a393);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 15px; color: var(--bg);
+      position: relative;
+    }
+    .chat-av::after {
+      content: ''; position: absolute;
+      bottom: 1px; right: 1px;
+      width: 10px; height: 10px;
+      background: #22c55e; border-radius: 50%;
+      border: 2px solid var(--bg2);
+    }
+    .chat-hd-info { flex: 1; }
+    .chat-hd-name { display: block; font-size: 14px; font-weight: 600; }
+    .chat-hd-status { font-size: 11px; color: #22c55e; font-weight: 500; }
+    .chat-hd-badge {
+      background: var(--teal10); color: var(--teal);
+      font-size: 10px; font-weight: 600;
+      padding: 3px 9px; border-radius: var(--pill);
+      border: 1px solid var(--teal20);
+    }
+
+    /* Messages */
+    .chat-msgs {
+      flex: 1; overflow-y: auto; padding: 14px;
+      display: flex; flex-direction: column; gap: 11px;
+      scroll-behavior: smooth;
+    }
+    .chat-msgs::-webkit-scrollbar { width: 3px; }
+    .chat-msgs::-webkit-scrollbar-thumb {
+      background: var(--w10); border-radius: 2px;
+    }
+
+    .msg { display: flex; gap: 7px; }
+    .msg-ai  { align-self: flex-start; max-width: 90%; }
+    .msg-usr { align-self: flex-end; flex-direction: row-reverse; max-width: 76%; }
+
+    .msg-av {
+      width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0;
+      background: linear-gradient(135deg, #2CCAB5, #18a393);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 700; color: var(--bg);
+      align-self: flex-end;
+    }
+    .msg-bbl {
+      padding: 10px 13px; border-radius: var(--r16);
+      font-size: 13px; line-height: 1.65;
+    }
+    .msg-ai  .msg-bbl {
+      background: rgba(44,202,181,0.10);
+      border: 1px solid rgba(44,202,181,0.15);
+      border-radius: 4px var(--r16) var(--r16) var(--r16);
+      color: var(--w80);
+    }
+    .msg-ai .msg-bbl strong { color: var(--w100); }
+    .msg-usr .msg-bbl {
+      background: var(--coral);
+      border-radius: var(--r16) var(--r16) 4px var(--r16);
+      color: var(--w100);
+    }
+
+    /* Typing */
+    .typing-wrap {
+      display: flex; align-items: center; gap: 4px;
+      padding: 10px 13px;
+      background: rgba(44,202,181,0.08);
+      border: 1px solid rgba(44,202,181,0.12);
+      border-radius: 4px var(--r16) var(--r16) var(--r16);
+      width: fit-content;
+    }
+    .typing-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--teal); opacity: 0.45;
+      animation: t-bounce 1.3s infinite;
+    }
+    .typing-dot:nth-child(2) { animation-delay: 0.18s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.36s; }
+    @keyframes t-bounce {
+      0%, 100% { transform: translateY(0); opacity: 0.35; }
+      45% { transform: translateY(-6px); opacity: 1; }
+    }
+
+    /* Quick suggestions */
+    .chat-chips {
+      display: flex; flex-wrap: wrap; gap: 6px;
+      padding: 8px 14px;
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .chip {
+      background: var(--w10); border: 1px solid var(--border);
+      border-radius: var(--pill);
+      padding: 5px 12px; font-size: 11px; font-weight: 500;
+      color: var(--w60); cursor: pointer;
+      font-family: 'Poppins', sans-serif;
+      transition: background 0.2s, color 0.2s, border-color 0.2s;
+      white-space: nowrap;
+    }
+    .chip:hover { background: var(--teal10); border-color: var(--teal20); color: var(--teal); }
+
+    /* Input */
+    .chat-inp-wrap {
+      display: flex; align-items: center; gap: 9px;
+      padding: 12px 14px;
+      background: rgba(5, 16, 10, 0.75);
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .chat-inp {
+      flex: 1; background: var(--w10); border: 1px solid var(--border);
+      border-radius: var(--pill); padding: 9px 15px;
+      font-family: 'Poppins', sans-serif; font-size: 13px; color: var(--w100);
+      outline: none; transition: border-color 0.2s;
+    }
+    .chat-inp::placeholder { color: var(--w40); }
+    .chat-inp:focus { border-color: var(--teal20); }
+    .chat-inp:disabled { opacity: 0.45; cursor: not-allowed; }
+    .chat-send-btn {
+      width: 37px; height: 37px; border-radius: 50%;
+      background: var(--teal); border: none; cursor: pointer; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center; color: var(--bg);
+      transition: opacity 0.2s, transform 0.15s;
+    }
+    .chat-send-btn:hover { opacity: 0.88; transform: scale(1.06); }
+    .chat-send-btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+
+    /* ══ LOGOS STRIP ══════════════════════════════════════════════════════ */
+    .logos-strip {
+      position: relative; z-index: 1;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 22px 52px; text-align: center;
+    }
+    .logos-label {
+      font-size: 11px; font-weight: 500; color: var(--w40);
+      text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 14px;
+    }
+    .logos-row {
+      display: flex; justify-content: center; align-items: center;
+      gap: 28px; flex-wrap: wrap;
+    }
+    .logo-pill {
+      background: var(--w05); border: 1px solid var(--border);
+      border-radius: var(--r8); padding: 8px 20px;
+      font-size: 13px; font-weight: 600; color: var(--w40); letter-spacing: 0.3px;
+    }
+
+    /* ══ SHARED SECTION STYLES ════════════════════════════════════════════ */
+    .sec {
+      position: relative; z-index: 1;
+      max-width: 1120px; margin: 0 auto; padding: 84px 52px;
+    }
+    .sec-dark {
+      background: var(--bg2);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    .sec-dark .sec-inner {
+      max-width: 1120px; margin: 0 auto; padding: 84px 52px;
+    }
+    .sec-lbl {
+      display: inline-flex; align-items: center; gap: 7px;
+      background: var(--teal10); border: 1px solid var(--teal20);
+      border-radius: var(--pill); padding: 4px 13px;
+      font-size: 11px; font-weight: 600; color: var(--teal);
+      margin-bottom: 14px; text-transform: uppercase; letter-spacing: 1px;
+    }
+    .sec-h2 {
+      font-size: 36px; font-weight: 700; line-height: 1.22;
+      letter-spacing: -0.7px; margin-bottom: 12px;
+    }
+    .sec-sub {
+      font-size: 15px; color: var(--w60); max-width: 520px;
+      line-height: 1.75; margin-bottom: 52px;
+    }
+
+    /* ══ FEATURES ════════════════════════════════════════════════════════ */
+    .feat-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
+    }
+    .feat-card {
+      background: var(--w05); border: 1px solid var(--border);
+      border-radius: var(--r16); padding: 26px;
+      transition: background 0.25s, border-color 0.25s, transform 0.2s;
+    }
+    .feat-card:hover {
+      background: var(--teal10); border-color: var(--border-teal);
+      transform: translateY(-3px);
+    }
+    .feat-icon {
+      width: 46px; height: 46px; border-radius: var(--r12);
+      background: var(--teal10); display: flex; align-items: center;
+      justify-content: center; font-size: 22px; margin-bottom: 16px;
+      transition: background 0.25s;
+    }
+    .feat-card:hover .feat-icon { background: var(--teal20); }
+    .feat-h3 { font-size: 15px; font-weight: 600; margin-bottom: 8px; }
+    .feat-p { font-size: 13px; color: var(--w60); line-height: 1.65; }
+
+    /* ══ HOW IT WORKS ═════════════════════════════════════════════════════ */
+    .steps-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      position: relative; gap: 0;
+    }
+    .steps-grid::after {
+      content: '';
+      position: absolute; top: 25px;
+      left: calc(16.67% + 22px); right: calc(16.67% + 22px);
+      height: 1px;
+      background: linear-gradient(90deg, rgba(44,202,181,0.4), rgba(44,202,181,0.15), rgba(44,202,181,0.4));
+    }
+    .step { text-align: center; padding: 0 28px; }
+    .step-n {
+      width: 50px; height: 50px; border-radius: 50%;
+      background: linear-gradient(135deg, #2CCAB5, #18a393);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; font-weight: 700; color: var(--bg);
+      margin: 0 auto 20px; position: relative; z-index: 1;
+      box-shadow: 0 0 0 6px rgba(44,202,181,0.12);
+    }
+    .step h3 { font-size: 15px; font-weight: 600; margin-bottom: 8px; }
+    .step p { font-size: 13px; color: var(--w60); line-height: 1.65; }
+
+    /* ══ STATS ═══════════════════════════════════════════════════════════ */
+    .stats-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
+    }
+    .stat-card {
+      text-align: center; padding: 36px 24px;
+      background: var(--w05); border: 1px solid var(--border);
+      border-radius: var(--r16);
+      transition: border-color 0.25s;
+    }
+    .stat-card:hover { border-color: var(--border-teal); }
+    .stat-val {
+      font-size: 52px; font-weight: 800; color: var(--teal);
+      letter-spacing: -2px; line-height: 1; margin-bottom: 10px;
+    }
+    .stat-lbl { font-size: 13px; color: var(--w60); line-height: 1.55; }
+
+    /* ══ TESTIMONIALS ════════════════════════════════════════════════════ */
+    .testi-grid {
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px;
+    }
+    .testi-card {
+      background: var(--w05); border: 1px solid var(--border);
+      border-radius: var(--r16); padding: 28px;
+      transition: border-color 0.25s;
+    }
+    .testi-card:hover { border-color: var(--border-teal); }
+    .t-stars { color: var(--teal); font-size: 14px; margin-bottom: 14px; }
+    .t-quote {
+      font-size: 14px; color: var(--w60); line-height: 1.8;
+      font-style: italic; margin-bottom: 20px;
+    }
+    .t-author { display: flex; align-items: center; gap: 11px; }
+    .t-av {
+      width: 38px; height: 38px; border-radius: 50%;
+      background: linear-gradient(135deg, #2CCAB5, #18a393);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 700; color: var(--bg); flex-shrink: 0;
+    }
+    .t-name { font-size: 13px; font-weight: 600; }
+    .t-role { font-size: 12px; color: var(--w40); }
+
+    /* ══ CTA ══════════════════════════════════════════════════════════════ */
+    .cta-wrap {
+      position: relative; z-index: 1;
+      background: linear-gradient(160deg, var(--bg2) 0%, rgba(44,202,181,0.06) 100%);
+      border-top: 1px solid var(--border);
+    }
+    .cta-inner {
+      max-width: 600px; margin: 0 auto;
+      padding: 90px 52px; text-align: center;
+    }
+    .cta-inner .sec-lbl { justify-content: center; }
+    .cta-h2 {
+      font-size: 34px; font-weight: 700; line-height: 1.22;
+      letter-spacing: -0.7px; margin-bottom: 14px;
+    }
+    .cta-sub {
+      font-size: 15px; color: var(--w60); line-height: 1.75;
+      margin: 0 auto 36px; max-width: 480px;
+    }
+    .cta-form { display: flex; flex-direction: column; gap: 11px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; }
+    .form-inp {
+      background: var(--w10); border: 1px solid var(--border);
+      border-radius: var(--r8); padding: 13px 16px;
+      font-family: 'Poppins', sans-serif; font-size: 13px; color: var(--w100);
+      outline: none; width: 100%; transition: border-color 0.2s;
+    }
+    .form-inp::placeholder { color: var(--w40); }
+    .form-inp:focus { border-color: var(--teal20); }
+    .form-submit {
+      width: 100%; background: var(--coral); color: var(--w100);
+      font-family: 'Poppins', sans-serif; font-size: 16px; font-weight: 600;
+      padding: 17px; border: none; border-radius: var(--r8);
+      cursor: pointer; transition: opacity 0.2s, transform 0.15s;
+    }
+    .form-submit:hover { opacity: 0.9; transform: translateY(-1px); }
+    .form-submit.sent { background: var(--teal); cursor: default; transform: none; }
+    .form-disc { font-size: 11px; color: var(--w40); margin-top: 4px; }
+
+    /* ══ FOOTER ═══════════════════════════════════════════════════════════ */
+    footer {
+      position: relative; z-index: 1;
+      border-top: 1px solid var(--border);
+      padding: 28px 52px; text-align: center;
+      font-size: 12px; color: var(--w40);
+    }
+    footer a { color: var(--teal); text-decoration: none; }
+
+    /* ══ ANIMATIONS ══════════════════════════════════════════════════════ */
+    .fi {
+      opacity: 0; transform: translateY(22px);
+      transition: opacity 0.65s ease, transform 0.65s ease;
+    }
+    .fi.on { opacity: 1; transform: translateY(0); }
+    .fi-d1 { transition-delay: 0.10s; }
+    .fi-d2 { transition-delay: 0.20s; }
+    .fi-d3 { transition-delay: 0.30s; }
+    .fi-d4 { transition-delay: 0.40s; }
+    .fi-d5 { transition-delay: 0.50s; }
+
+    /* ══ RESPONSIVE ══════════════════════════════════════════════════════ */
+    @media (max-width: 960px) {
+      nav { padding: 16px 24px; }
+      .nav-right .nav-link { display: none; }
+      #hero { grid-template-columns: 1fr; padding: 48px 24px 64px; min-height: auto; }
+      .hero-h1 { font-size: 36px; }
+      .hero-right { order: 2; }
+      .hero-left { order: 1; }
+      .chat-card { max-width: 100%; height: 440px; }
+      .logos-strip { padding: 20px 24px; }
+      .sec, .sec-dark .sec-inner { padding: 64px 24px; }
+      .sec-h2 { font-size: 28px; }
+      .feat-grid { grid-template-columns: 1fr 1fr; }
+      .steps-grid { grid-template-columns: 1fr; gap: 32px; }
+      .steps-grid::after { display: none; }
+      .stats-grid { grid-template-columns: 1fr 1fr; }
+      .testi-grid { grid-template-columns: 1fr; }
+      .cta-inner { padding: 64px 24px; }
+      .form-row { grid-template-columns: 1fr; }
+      footer { padding: 24px; }
+    }
+    @media (max-width: 600px) {
+      .hero-h1 { font-size: 28px; }
+      .feat-grid { grid-template-columns: 1fr; }
+      .stats-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ════════════════ NAV ════════════════ -->
+<nav>
+  <a class="nav-logo" href="#">
+    <img src="images/michamba-logo.svg" alt="MiChamba" />
+    <span class="nav-logo-x">×</span>
+    <span class="nav-logo-maria">MarIA</span>
+  </a>
+  <div class="nav-right">
+    <a class="nav-link" href="#funcionalidades">Funcionalidades</a>
+    <a class="nav-link" href="#testimonios">Testimonios</a>
+    <a class="nav-cta" href="#acceso">Acceso anticipado</a>
+  </div>
+</nav>
+
+<!-- ════════════════ HERO ════════════════ -->
+<section id="hero">
+
+  <!-- Copy -->
+  <div class="hero-left">
+    <div class="hero-badge">
+      <div class="badge-dot"></div>
+      Nuevo · Exclusivo para el ecosistema Michamba
+    </div>
+
+    <h1 class="hero-h1">
+      La IA que convierte<br>
+      operaciones complejas<br>
+      en <span class="hl">WhatsApp simple</span>
+    </h1>
+
+    <p class="hero-sub">
+      María aprende tu negocio, coordina tu equipo de campo y genera reportes automáticos — sin apps nuevas, sin capacitación, sin fricción.
+    </p>
+
+    <div class="hero-actions">
+      <a href="#acceso" class="btn-primary">
+        Solicitar acceso anticipado
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </a>
+      <a href="#como-funciona" class="btn-secondary">
+        Ver cómo funciona
+      </a>
+    </div>
+
+    <div class="hero-metrics">
+      <span class="metric-pill">🏢 +50 empresas en Michamba</span>
+      <span class="metric-pill">⚡ Sin capacitación</span>
+      <span class="metric-pill">📱 Solo WhatsApp</span>
+    </div>
+  </div>
+
+  <!-- Chat card -->
+  <div class="hero-right">
+    <div class="chat-card">
+
+      <div class="chat-hd">
+        <div class="chat-av">M</div>
+        <div class="chat-hd-info">
+          <span class="chat-hd-name">María</span>
+          <span class="chat-hd-status">En línea · Michamba</span>
+        </div>
+        <span class="chat-hd-badge">IA en vivo</span>
+      </div>
+
+      <div class="chat-msgs" id="chatMsgs"></div>
+
+      <div class="chat-chips" id="chatChips">
+        <button class="chip" onclick="useChip(this)">¿Qué hace María?</button>
+        <button class="chip" onclick="useChip(this)">¿Funciona con WhatsApp?</button>
+        <button class="chip" onclick="useChip(this)">Tengo 20 personas en campo</button>
+      </div>
+
+      <div class="chat-inp-wrap">
+        <input type="text" id="chatInp" class="chat-inp" placeholder="Escribe tu pregunta..." autocomplete="off" />
+        <button class="chat-send-btn" id="chatBtn" onclick="sendMsg()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+</section>
+
+<!-- ════════════════ LOGOS ════════════════ -->
+<div class="logos-strip">
+  <p class="logos-label">Empresas que ya confían en Michamba</p>
+  <div class="logos-row">
+    <div class="logo-pill">LogisticaMX</div>
+    <div class="logo-pill">Campo Norte</div>
+    <div class="logo-pill">TecnoField</div>
+    <div class="logo-pill">ServicesHub</div>
+    <div class="logo-pill">+46 más</div>
+  </div>
+</div>
+
+<!-- ════════════════ FEATURES ════════════════ -->
+<section class="sec" id="funcionalidades">
+  <div class="sec-lbl">⚡ Capacidades</div>
+  <h2 class="sec-h2 fi">Todo lo que María hace por ti</h2>
+  <p class="sec-sub fi fi-d1">Entrenada con datos de operaciones reales de campo en México. Lista para trabajar desde el primer día.</p>
+
+  <div class="feat-grid">
+    <div class="feat-card fi fi-d1">
+      <div class="feat-icon">🧠</div>
+      <h3 class="feat-h3">Análisis en tiempo real</h3>
+      <p class="feat-p">Monitorea el avance de tus equipos, detecta anomalías y genera alertas antes de que se conviertan en problemas.</p>
+    </div>
+    <div class="feat-card fi fi-d2">
+      <div class="feat-icon">💬</div>
+      <h3 class="feat-h3">Vive en WhatsApp</h3>
+      <p class="feat-p">Tu equipo ya sabe usarlo. María opera ahí. Sin apps, sin onboarding técnico, sin fricción.</p>
+    </div>
+    <div class="feat-card fi fi-d3">
+      <div class="feat-icon">⚙️</div>
+      <h3 class="feat-h3">Acciones automáticas</h3>
+      <p class="feat-p">Reasigna tareas, envía notificaciones y actualiza registros sin necesidad de intervención manual.</p>
+    </div>
+    <div class="feat-card fi fi-d2">
+      <div class="feat-icon">📊</div>
+      <h3 class="feat-h3">Reportes en segundos</h3>
+      <p class="feat-p">Pídele el reporte de cierre y lo tienes al instante, con los KPIs que más importan para tu operación.</p>
+    </div>
+    <div class="feat-card fi fi-d3">
+      <div class="feat-icon">🔗</div>
+      <h3 class="feat-h3">Conectada al ecosistema</h3>
+      <p class="feat-p">Integración nativa con Michamba. Todos tus datos de campo disponibles para la IA sin configuración.</p>
+    </div>
+    <div class="feat-card fi fi-d4">
+      <div class="feat-icon">🎯</div>
+      <h3 class="feat-h3">Aprende tu operación</h3>
+      <p class="feat-p">Cada interacción la hace más inteligente sobre tu negocio. Se adapta a tus procesos, no al revés.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════ HOW IT WORKS ════════════════ -->
+<div class="sec-dark" id="como-funciona">
+  <div class="sec-inner">
+    <div class="sec-lbl">🚀 Primeros pasos</div>
+    <h2 class="sec-h2 fi">Activa María en 3 pasos</h2>
+    <p class="sec-sub fi fi-d1">Sin integraciones complejas. Si ya usas Michamba, estás a minutos de tenerla activa.</p>
+
+    <div class="steps-grid">
+      <div class="step fi fi-d1">
+        <div class="step-n">1</div>
+        <h3>Solicita acceso</h3>
+        <p>Llena el formulario. Un especialista de Michamba te contacta en menos de 24 horas.</p>
+      </div>
+      <div class="step fi fi-d2">
+        <div class="step-n">2</div>
+        <h3>Conecta tu cuenta</h3>
+        <p>Vinculamos María con tu operación actual de Michamba. Tus datos, listos para la IA.</p>
+      </div>
+      <div class="step fi fi-d3">
+        <div class="step-n">3</div>
+        <h3>Empieza a usarla</h3>
+        <p>Escríbele por WhatsApp. Desde ese momento tienes un copiloto de operaciones disponible 24/7.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════ STATS ════════════════ -->
+<section class="sec">
+  <div class="stats-grid">
+    <div class="stat-card fi">
+      <div class="stat-val" data-val="50" data-pre="+" data-suf="">+50</div>
+      <div class="stat-lbl">empresas en el ecosistema Michamba</div>
+    </div>
+    <div class="stat-card fi fi-d1">
+      <div class="stat-val" data-val="3" data-pre="" data-suf="x">3x</div>
+      <div class="stat-lbl">más rápido en resolución de incidencias de campo</div>
+    </div>
+    <div class="stat-card fi fi-d2">
+      <div class="stat-val" data-val="40" data-pre="-" data-suf="%">-40%</div>
+      <div class="stat-lbl">tiempo invertido en seguimiento manual de equipos</div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════ TESTIMONIALS ════════════════ -->
+<div class="sec-dark" id="testimonios">
+  <div class="sec-inner">
+    <div class="sec-lbl">💬 Testimonios</div>
+    <h2 class="sec-h2 fi">Lo que dicen quienes ya la prueban</h2>
+    <p class="sec-sub fi fi-d1">Early adopters del ecosistema Michamba con acceso beta a María.</p>
+
+    <div class="testi-grid">
+      <div class="testi-card fi fi-d1">
+        <div class="t-stars">★★★★★</div>
+        <p class="t-quote">"Antes tardaba 2 horas en consolidar el reporte del día. Ahora le pregunto a María Mar y en 30 segundos lo tengo. Eso solo ya valió la pena el cambio."</p>
+        <div class="t-author">
+          <div class="t-av">CR</div>
+          <div>
+            <div class="t-name">Carlos R.</div>
+            <div class="t-role">Director de Operaciones · Logística</div>
+          </div>
+        </div>
+      </div>
+      <div class="testi-card fi fi-d2">
+        <div class="t-stars">★★★★★</div>
+        <p class="t-quote">"Lo que más me sorprendió fue que no hubo capacitación. Mi equipo simplemente empezó a chatear con ella y ya sabía exactamente qué hacer."</p>
+        <div class="t-author">
+          <div class="t-av">LP</div>
+          <div>
+            <div class="t-name">Laura P.</div>
+            <div class="t-role">Gerente de Campo · Servicios técnicos</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════ CTA ════════════════ -->
+<div class="cta-wrap" id="acceso">
+  <div class="cta-inner">
+    <div class="sec-lbl" style="justify-content:center;">🎯 Acceso anticipado</div>
+    <h2 class="cta-h2 fi">Sé de los primeros en tener<br>a María</h2>
+    <p class="cta-sub fi fi-d1">Los cupos de acceso anticipado son limitados. Regístrate y un especialista de Michamba te contacta en menos de 24 horas.</p>
+
+    <form class="cta-form fi fi-d2" id="ctaForm" onsubmit="submitForm(event)">
+      <div class="form-row">
+        <input class="form-inp" type="text" placeholder="Tu nombre" required />
+        <input class="form-inp" type="text" placeholder="Empresa" required />
+      </div>
+      <div class="form-row">
+        <input class="form-inp" type="tel" placeholder="WhatsApp (+52...)" required />
+        <input class="form-inp" type="email" placeholder="Correo electrónico" required />
+      </div>
+      <button type="submit" class="form-submit" id="formBtn">
+        Solicitar acceso anticipado →
+      </button>
+      <p class="form-disc">Sin spam. Solo te contactamos para coordinar tu onboarding con Michamba.</p>
+    </form>
+  </div>
+</div>
+
+<!-- ════════════════ FOOTER ════════════════ -->
+<footer>
+  <p>© 2025 Michamba · <a href="#">michamba.com</a> · María es parte del ecosistema Michamba</p>
+</footer>
+
+<script>
+/* ══════════════════════════════════════════════════
+   CHAT
+══════════════════════════════════════════════════ */
+const history = [];
+const msgs   = document.getElementById('chatMsgs');
+const inp    = document.getElementById('chatInp');
+const btn    = document.getElementById('chatBtn');
+const chips  = document.getElementById('chatChips');
+
+// Saludo inicial
+window.addEventListener('DOMContentLoaded', () => {
+  setTimeout(() => addAI('¡Hola! 👋 Soy **María**, la primera IA diseñada para operaciones de campo en México.\n\nCuéntame sobre tu empresa y tu equipo — te muestro cómo puedo ayudarte a operar mejor desde WhatsApp.'), 500);
+});
+
+function md(text) {
+  return text
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    .replace(/\n/g, '<br>');
+}
+
+function scrollBot() { msgs.scrollTop = msgs.scrollHeight; }
+
+function addAI(text) {
+  const el = document.createElement('div');
+  el.className = 'msg msg-ai';
+  el.innerHTML = `<div class="msg-av">M</div><div class="msg-bbl">${md(text)}</div>`;
+  msgs.appendChild(el);
+  scrollBot();
+  return el;
+}
+
+function addUser(text) {
+  const el = document.createElement('div');
+  el.className = 'msg msg-usr';
+  el.innerHTML = `<div class="msg-bbl">${text}</div>`;
+  msgs.appendChild(el);
+  scrollBot();
+}
+
+function showTyping() {
+  const el = document.createElement('div');
+  el.className = 'msg msg-ai'; el.id = 'typing';
+  el.innerHTML = `<div class="msg-av">M</div><div class="typing-wrap"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></div>`;
+  msgs.appendChild(el);
+  scrollBot();
+  return el;
+}
+
+function useChip(el) {
+  inp.value = el.textContent;
+  sendMsg();
+}
+
+inp.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); }
+});
+
+async function sendMsg() {
+  const text = inp.value.trim();
+  if (!text || inp.disabled) return;
+
+  inp.value = '';
+  chips.style.display = 'none';
+  addUser(text);
+  history.push({ role: 'user', content: text });
+
+  inp.disabled = true;
+  btn.disabled = true;
+  const typing = showTyping();
+
+  let fullText = '';
+
+  try {
+    const resp = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: history }),
+    });
+
+    typing.remove();
+
+    const aiEl = document.createElement('div');
+    aiEl.className = 'msg msg-ai';
+    aiEl.innerHTML = `<div class="msg-av">M</div><div class="msg-bbl"></div>`;
+    msgs.appendChild(aiEl);
+    const bbl = aiEl.querySelector('.msg-bbl');
+
+    const reader = resp.body.getReader();
+    const dec    = new TextDecoder();
+    let   buf    = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      const lines = buf.split('\n');
+      buf = lines.pop() ?? '';
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const raw = line.slice(6).trim();
+        if (raw === '[DONE]') break;
+        try {
+          const p = JSON.parse(raw);
+          if (p.error)  fullText  = `⚠️ ${p.error}`;
+          if (p.text)   fullText += p.text;
+          bbl.innerHTML = md(fullText);
+          scrollBot();
+        } catch (_) {}
+      }
+    }
+
+    if (fullText) history.push({ role: 'assistant', content: fullText });
+
+  } catch (err) {
+    if (document.getElementById('typing')) typing.remove();
+    addAI('Lo siento, hubo un error al conectar. ¿Puedes intentarlo de nuevo?');
+  } finally {
+    inp.disabled = false;
+    btn.disabled = false;
+    inp.focus();
+  }
+}
+
+/* ══════════════════════════════════════════════════
+   SCROLL ANIMATIONS
+══════════════════════════════════════════════════ */
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('on'); });
+}, { threshold: 0.1 });
+
+document.querySelectorAll('.fi').forEach(el => observer.observe(el));
+
+/* ══════════════════════════════════════════════════
+   STATS COUNTER
+══════════════════════════════════════════════════ */
+const statObs = new IntersectionObserver(entries => {
+  entries.forEach(entry => {
+    if (!entry.isIntersecting) return;
+    statObs.unobserve(entry.target);
+    const el  = entry.target;
+    const end = parseInt(el.dataset.val);
+    const pre = el.dataset.pre || '';
+    const suf = el.dataset.suf || '';
+    let   cur = 0;
+    const dur = 1600;
+    const step = end / (dur / 16);
+    const timer = setInterval(() => {
+      cur = Math.min(cur + step, end);
+      el.textContent = pre + Math.floor(cur) + suf;
+      if (cur >= end) clearInterval(timer);
+    }, 16);
+  });
+}, { threshold: 0.5 });
+
+document.querySelectorAll('.stat-val[data-val]').forEach(el => statObs.observe(el));
+
+/* ══════════════════════════════════════════════════
+   FORM
+══════════════════════════════════════════════════ */
+function submitForm(e) {
+  e.preventDefault();
+  const btn = document.getElementById('formBtn');
+  btn.textContent = '✅ ¡Registrado! Te contactamos pronto';
+  btn.classList.add('sent');
+  btn.disabled = true;
+}
+</script>
+
+</body>
+</html>

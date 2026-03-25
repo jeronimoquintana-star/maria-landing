@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:api.github.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(open \"/Users/mac1/Documents/LP Michamba/maria-mar-ia.html\")",
+      "Skill(claude-api)",
+      "Skill(claude-api:*)"
+    ]
+  }
+}
