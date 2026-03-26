@@ -731,10 +731,10 @@
         </div>
         <div class="slider-group">
           <div class="slider-label">
-            <span>Costo por hora (MXN)</span>
-            <strong id="val-costo">$150</strong>
+            <span>Costo por día (MXN)</span>
+            <strong id="val-costo">$800</strong>
           </div>
-          <input type="range" class="calc-slider" id="s-costo" min="50" max="500" value="150" oninput="calcUpdate()">
+          <input type="range" class="calc-slider" id="s-costo" min="200" max="3000" value="800" oninput="calcUpdate()">
         </div>
       </div>
 
@@ -1144,7 +1144,7 @@ function calcUpdate() {
 
   const dias = 22;
   const horasMes  = (personas * minutos * tareas * dias) / 60;
-  const costoMes  = horasMes * costo;
+  const costoMes  = horasMes * (costo / 8);
   const tareasMes = personas * tareas * dias;
   const sinVis    = Math.round(tareasMes * 0.28);
   const salarios  = (costoMes / 8000).toFixed(1);
