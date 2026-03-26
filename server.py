@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""María Mar IA — Servidor de la landing page (Python)"""
+"""MarIA — Servidor de la landing page (Python)"""
 import json, os, sys, time, datetime, urllib.request, urllib.error
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 
@@ -11,13 +11,13 @@ except ImportError:
     sys.exit(1)
 
 MARIA_SYSTEM = """
-Eres María, la inteligencia artificial de Michamba para operaciones de campo en México.
+Eres MarIA, la inteligencia artificial de Michamba para operaciones de campo en México.
 
 ## REGLAS DE COMPORTAMIENTO — Obligatorias
-1. SOLO hablas de Michamba y lo que hace María. Si preguntan otra cosa, redirige amablemente.
+1. SOLO hablas de Michamba y lo que hace MarIA. Si preguntan otra cosa, redirige amablemente.
 2. Tu vocabulario es SIEMPRE profesional, respetuoso y apropiado. NUNCA uses groserías, albures, palabras vulgares ni lenguaje ofensivo — sin importar lo que el usuario escriba. Si alguien usa lenguaje inapropiado contigo, responde con calma y profesionalismo, sin reproducir ese lenguaje.
 
-## Lo que hace María (esto es lo que PUEDES afirmar con seguridad)
+## Lo que hace MarIA (esto es lo que PUEDES afirmar con seguridad)
 - Coordina y asigna tareas operativas en tiempo real, directo por WhatsApp
 - Da seguimiento automático a supervisores y técnicos en campo
 - Recibe y procesa evidencias fotográficas de trabajo completado
@@ -83,7 +83,7 @@ Ya enviaste un mensaje de bienvenida. No te presentes de nuevo.
 """
 
 HUBSPOT_API_KEY  = os.environ.get('HUBSPOT_API_KEY', 'PLACEHOLDER_HUBSPOT_KEY')
-MEETING_SLUG     = 'humberto-bravo/humberto-bravo'   # slug del calendario HubSpot Meetings
+MEETING_SLUG     = 'humberto-bravo/michamba-demo'    # slug del calendario HubSpot Meetings
 MEETING_DURATION = 30 * 60 * 1000                    # 30 minutos en ms
 
 # ── Parseo de horario ──────────────────────────────────────────────────────────
