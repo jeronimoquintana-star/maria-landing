@@ -49,7 +49,7 @@ Cuando el usuario diga que quiere una demo o agendar una reunión, pide los sigu
 2. Correo electrónico
 3. Horario preferido — ofrece estas opciones: Lunes a Viernes en los horarios 10:00am, 12:00pm, 3:00pm o 5:00pm (hora de México)
 
-Cuando tengas esos 3 datos, confirma amablemente el agendado y AL FINAL de tu respuesta agrega EXACTAMENTE este bloque (sin espacios extra, en una sola línea):
+Cuando tengas esos 3 datos, confirma amablemente mencionando el DÍA DE LA SEMANA y la FECHA COMPLETA (ej: "el jueves 3 de abril a las 3:00pm hora de México") — usa la fecha de hoy para calcular la fecha exacta. AL FINAL de tu respuesta agrega EXACTAMENTE este bloque (sin espacios extra, en una sola línea):
 [[DEMO:{"name":"NOMBRE","email":"EMAIL","slot":"HORARIO_ELEGIDO"}]]
 
 Reemplaza los valores con los datos reales que el usuario proporcionó. Este bloque es invisible para el usuario.
@@ -98,9 +98,13 @@ _HOUR_MAP = {
     '3pm': 15,  '15:00': 15, '3 pm': 15,
     '5pm': 17,  '17:00': 17, '5 pm': 17,
 }
+_DAY_NAMES   = ['lunes','martes','miércoles','jueves','viernes','sábado','domingo']
+_MONTH_NAMES = {1:'enero',2:'febrero',3:'marzo',4:'abril',5:'mayo',6:'junio',
+                7:'julio',8:'agosto',9:'septiembre',10:'octubre',11:'noviembre',12:'diciembre'}
+_HOUR_LABELS = {10:'10:00am', 12:'12:00pm', 15:'3:00pm', 17:'5:00pm'}
 
 def parse_slot_to_ms(slot_str):
-    """Convierte 'jueves 3pm' → Unix timestamp ms (hora México CST = UTC-6)."""
+    """Convierte 'jueves 3pm' → (Unix ms, 'jueves 3 de abril a las 3:00pm') o (None, None)."""
     MX = datetime.timezone(datetime.timedelta(hours=-6))
     now = datetime.datetime.now(MX)
     s   = slot_str.lower()
@@ -108,15 +112,61 @@ def parse_slot_to_ms(slot_str):
     day  = next((v for k, v in _DAY_MAP.items()  if k in s), None)
     hour = next((v for k, v in _HOUR_MAP.items() if k in s), None)
     if day is None or hour is None:
-        return None
+        return None, None
 
     days_ahead = (day - now.weekday()) % 7 or 7   # mínimo 1 día adelante
     target = (now + datetime.timedelta(days=days_ahead)).date()
     dt = datetime.datetime(target.year, target.month, target.day,
                            hour, 0, 0, tzinfo=MX)
-    return int(dt.timestamp() * 1000)
+    ms    = int(dt.timestamp() * 1000)
+    label = f"{_DAY_NAMES[day]} {target.day} de {_MONTH_NAMES[target.month]} a las {_HOUR_LABELS.get(hour, f'{hour}:00')}"
+    return ms, label
 
-# ── HubSpot request ────────────────────────────────────────────────────────────
+# ── HubSpot GET ────────────────────────────────────────────────────────────────
+def hubspot_get(path):
+    """GET a la API de HubSpot."""
+    if HUBSPOT_API_KEY.startswith('pat-'):
+        url     = f'https://api.hubapi.com{path}'
+        headers = {'Authorization': f'Bearer {HUBSPOT_API_KEY}'}
+    else:
+        sep = '&' if '?' in path else '?'
+        url = f'https://api.hubapi.com{path}{sep}hapikey={HUBSPOT_API_KEY}'
+        headers = {}
+    req = urllib.request.Request(url, headers=headers)
+    try:
+        with urllib.request.urlopen(req) as resp:
+            return json.loads(resp.read())
+    except urllib.error.HTTPError as e:
+        body = e.read().decode('utf-8', errors='replace')
+        raise RuntimeError(f'HubSpot {e.code}: {body}') from None
+
+def get_available_slots(around_ms):
+    """Retorna hasta 5 slots disponibles (±4 días) como labels legibles."""
+    if not around_ms:
+        return []
+    start = around_ms - 4 * 24 * 60 * 60 * 1000
+    end   = around_ms + 4 * 24 * 60 * 60 * 1000
+    try:
+        result = hubspot_get(
+            f'/scheduler/v3/meetings/meeting-links/{MEETING_SLUG}/availability'
+            f'?startTime={start}&endTime={end}')
+        MX = datetime.timezone(datetime.timedelta(hours=-6))
+        slots = []
+        for s in result.get('availabilityByDuration', {}).get(str(MEETING_DURATION), []):
+            ms = s.get('startMillisUtc')
+            if not ms:
+                continue
+            dt = datetime.datetime.fromtimestamp(ms / 1000, tz=MX)
+            if dt.hour not in _HOUR_LABELS:
+                continue
+            slots.append(f"{_DAY_NAMES[dt.weekday()]} {dt.day} de {_MONTH_NAMES[dt.month]} a las {_HOUR_LABELS[dt.hour]}")
+            if len(slots) >= 5:
+                break
+        return slots
+    except Exception:
+        return []
+
+# ── HubSpot POST ───────────────────────────────────────────────────────────────
 def hubspot_request(path, payload):
     """POST a la API de HubSpot. Soporta Legacy API Key y Private App Token."""
     if HUBSPOT_API_KEY.startswith('pat-'):
@@ -145,9 +195,25 @@ def book_demo(name, email, phone, company, team_size, slot):
     first, *rest = name.strip().split(' ', 1)
     last = rest[0] if rest else ''
 
-    start_ms = parse_slot_to_ms(slot)
+    start_ms, formatted_slot = parse_slot_to_ms(slot)
     if not start_ms:
         raise ValueError(f'No pude interpretar el horario: "{slot}"')
+
+    # 0. Verificar disponibilidad en el calendario de HubSpot
+    try:
+        avail = hubspot_get(
+            f'/scheduler/v3/meetings/meeting-links/{MEETING_SLUG}/availability'
+            f'?startTime={start_ms - 1800000}&endTime={start_ms + 1800000}')
+        avail_starts = {
+            s['startMillisUtc']
+            for s in avail.get('availabilityByDuration', {}).get(str(MEETING_DURATION), [])
+        }
+        if avail_starts and start_ms not in avail_starts:
+            raise ValueError('SLOT_UNAVAILABLE')
+    except ValueError:
+        raise
+    except Exception:
+        pass  # Si no se puede verificar, continuar con el booking
 
     # 1. Crear / actualizar contacto en CRM
     try:
@@ -179,7 +245,7 @@ def book_demo(name, email, phone, company, team_size, slot):
         ],
     })
 
-    return contact_id, booking
+    return contact_id, booking, formatted_slot
 
 # Cambiar al directorio del script para servir archivos estáticos
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
@@ -217,8 +283,15 @@ class Handler(SimpleHTTPRequestHandler):
         self.end_headers()
 
         try:
-            contact_id, meeting_id = book_demo(name, email, phone, company, team_size, slot)
-            payload = json.dumps({'ok': True, 'contact_id': contact_id, 'meeting_id': meeting_id})
+            contact_id, meeting_id, formatted_slot = book_demo(name, email, phone, company, team_size, slot)
+            payload = json.dumps({'ok': True, 'contact_id': contact_id, 'meeting_id': str(meeting_id), 'formatted_slot': formatted_slot})
+        except ValueError as e:
+            if str(e) == 'SLOT_UNAVAILABLE':
+                start_ms, _ = parse_slot_to_ms(slot)
+                alts = get_available_slots(start_ms)
+                payload = json.dumps({'ok': False, 'error_type': 'slot_unavailable', 'alternatives': alts})
+            else:
+                payload = json.dumps({'ok': False, 'error': str(e)})
         except Exception as e:
             payload = json.dumps({'ok': False, 'error': str(e)})
         self.wfile.write(payload.encode())
@@ -234,12 +307,17 @@ class Handler(SimpleHTTPRequestHandler):
         self.send_header('Connection', 'keep-alive')
         self.end_headers()
 
+        MX = datetime.timezone(datetime.timedelta(hours=-6))
+        now = datetime.datetime.now(MX)
+        date_label = f"{_DAY_NAMES[now.weekday()]} {now.day} de {_MONTH_NAMES[now.month]} de {now.year}"
+        dynamic_system = MARIA_SYSTEM + f'\n\n## Fecha de hoy (hora México)\nHoy es {date_label}.'
+
         client = anthropic.Anthropic()
         try:
             with client.messages.stream(
                 model='claude-opus-4-6',
                 max_tokens=350,
-                system=MARIA_SYSTEM,
+                system=dynamic_system,
                 messages=messages,
             ) as stream:
                 for text in stream.text_stream:

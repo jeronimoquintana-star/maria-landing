@@ -1083,7 +1083,16 @@ async function sendMsg() {
         .then(r => r.json())
         .then(res => {
           if (res.ok) {
-            addAI(`✅ ¡Tu demo está agendada para **${demoData.slot}**! Te llegará la confirmación a **${demoData.email}**. ¡Nos vemos pronto! 🎉`);
+            const slot = res.formatted_slot || demoData.slot;
+            addAI(`✅ ¡Tu demo está agendada para el **${slot}** (hora de México)! Te llegará la confirmación a **${demoData.email}**. ¡Nos vemos pronto! 🎉`);
+          } else if (res.error_type === 'slot_unavailable') {
+            let msg = '😅 Ese horario ya está ocupado en la agenda. ';
+            if (res.alternatives && res.alternatives.length) {
+              msg += `Estos son los próximos horarios disponibles:\n${res.alternatives.map(a => `• ${a}`).join('\n')}\n¿Cuál te funciona mejor?`;
+            } else {
+              msg += '¿Podrías elegir otro horario? (L–V: 10:00am, 12:00pm, 3:00pm o 5:00pm)';
+            }
+            addAI(msg);
           } else {
             addAI('Hubo un problema al agendar. Por favor, dale clic al botón "Hablar con el equipo" para coordinar directamente.');
           }
